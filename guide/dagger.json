@@ -1,0 +1,16 @@
+{
+  "name": "guide",
+  "sdk": "go",
+  "dependencies": [
+    {
+      "name": "eksctl",
+      "source": "github.com/matipan/daggerverse/eksctl@37bba13a2958017fe51123ce760ca6208a4792b0"
+    },
+    {
+      "name": "kubectl",
+      "source": "github.com/matipan/daggerverse/kubectl@81eaa2f85e75ed348ba99eaace27a95a37eb119c"
+    }
+  ],
+  "source": ".",
+  "engineVersion": "v0.11.3"
+}
