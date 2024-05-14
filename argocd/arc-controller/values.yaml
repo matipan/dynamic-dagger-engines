@@ -1,0 +1,47 @@
+labels:
+  app: arc
+
+replicaCount: 1
+
+image:
+  repository: "ghcr.io/actions/gha-runner-scale-set-controller"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+env:
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+volumes: []
+volumeMounts: []
+
+metrics:
+  controllerManagerAddr: ":9090"
+  listenerAddr: ":9090"
+  listenerEndpoint: "/metrics"
+
+flags:
+  logLevel: "info"
+  logFormat: "json"
+  updateStrategy: "immediate"

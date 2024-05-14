@@ -1,0 +1,71 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dagger-engines
+  namespace: argocd
+spec:
+  generators:
+    - plugin:
+        configMapRef:
+          name: argocd-github-release-generator
+        input:
+          parameters:
+            repository: "dagger/dagger"
+            min_release: v0.11.3
+        requeueAfterSeconds: 120
+  template:
+    metadata:
+      name: "dagger-engines-{{name_slug}}"
+    spec:
+      source:
+        repoURL: https://github.com/dagger/dagger
+        targetRevision: "{{name}}"
+        path: helm/dagger
+        helm:
+          valuesObject:
+            fullnameOverride: "dagger-engines-{{name_slug}}"
+            engine:
+              ### Customize your Dagger Engine
+              # https://github.com/moby/buildkit/blob/5997099827e676c4b6ce5774c98ade2483e0afe7/cmd/buildkitd/config/config.go
+              config: |
+                debug = true
+                insecure-entitlements = ["security.insecure"]
+              image:
+                repository: registry.dagger.io/engine
+                tag: "{{name}}"
+                pullPolicy: IfNotPresent
+              ### Set taints & tolerations for this workload
+              tolerations:
+                - effect: NoSchedule
+                  key: "dagger-runners"
+                  operator: Exists
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: node-for
+                        operator: In
+                        values:
+                          - "dagger-runners-{{name_slug}}"
+              readinessProbeSettings: 
+                failureThreshold: 3
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 1
+              terminationGracePeriodSeconds: 300
+              newServiceAccount:
+                create: false
+                annotations: []
+              existingServiceAccount: {}
+      project: dagger-runners
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        automated:
+          prune: true
+          selfHeal: true
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "dagger-runners"

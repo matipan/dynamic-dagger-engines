@@ -1,0 +1,62 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dagger-nodes
+  namespace: argocd
+spec:
+  generators:
+    - plugin:
+        configMapRef:
+          name: argocd-github-release-generator
+        input:
+          parameters:
+            repository: "dagger/dagger"
+            min_release: v0.11.3
+        requeueAfterSeconds: 120
+  template:
+    metadata:
+      name: "dagger-nodes-{{name_slug}}"
+    spec:
+      source:
+        repoURL: https://github.com/matipan/dynamic-dagger-engines
+        targetRevision: main
+        path: argocd/dagger-runners/manifests
+        kustomize:
+          nameSuffix: -{{name_slug}}
+          namespace: dagger-runners
+          patches:
+            - target:
+                kind: EC2NodeClass
+                name: dagger-runners
+              patch: |-
+                kind: EC2NodeClass
+                metadata:
+                  name: dagger-runners-{{name_slug}}
+                spec:
+                  tags:
+                    node-for: dagger-runners-{{name_slug}}
+            - target:
+                kind: NodePool
+                name: dagger-runners
+              patch: |-
+                kind: NodePool
+                metadata:
+                  name: dagger-runners-{{name_slug}}
+                spec:
+                  template:
+                    metadata:
+                      labels:
+                        node-for: dagger-runners-{{name_slug}}
+                    spec:
+                      nodeClassRef:
+                        name: dagger-runners-{{name_slug}}
+      project: dagger-runners
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        automated:
+          prune: true
+          selfHeal: true
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "dagger-runners"

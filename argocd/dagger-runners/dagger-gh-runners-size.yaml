@@ -1,0 +1,166 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: dagger-gh-runners-size
+  namespace: argocd
+spec:
+  generators:
+    - matrix:
+        generators:
+        - plugin:
+            configMapRef:
+              name: argocd-github-release-generator
+            input:
+              parameters:
+                repository: "dagger/dagger"
+                min_release: v0.11.1
+            requeueAfterSeconds: 120
+        - list:
+            # starting point is 1 core and 2Gi. We increase resources
+            # on cores by 4x. 4c is 8Gi, 8 core is 32Gi and 16 core is 128Gi.
+            elements:
+            - resource_id: "1c-2Gi"
+              cpu_requests: "1"
+              memory_requests: "2Gi"
+            - resource_id: "2c-4Gi"
+              cpu_requests: "2"
+              memory_requests: "4Gi"
+            - resource_id: "4c-8Gi"
+              cpu_requests: "4"
+              memory_requests: "8Gi"
+            - resource_id: "8c-16Gi"
+              cpu_requests: "8"
+              memory_requests: "16Gi"
+            - resource_id: "16c-32Gi"
+              cpu_requests: "16"
+              memory_requests: "32Gi"
+  template:
+    metadata:
+      name: "dagger-runners-{{name_slug}}-{{resource_id}}"
+    spec:
+      source:
+        repoURL: 'ghcr.io/actions/actions-runner-controller-charts'
+        chart: 'gha-runner-scale-set'
+        targetRevision: '0.8.3'
+        helm:
+          valuesObject:
+            # githubConfigUrl is the GitHub url for where you want to configure runners
+            # TODO: change this to point to your repository
+            githubConfigUrl: "https://github.com/<YOUR GITHUB REPOSITORY>"
+
+            # githubConfigSecret is the k8s secrets to use when auth with GitHub API.
+            # TODO: configure your github credentials on a secret and reference it
+            # here
+            githubConfigSecret: <YOUR SECRET>
+
+            # maxRunners is the max number of runners the autoscaling runner set will scale up to.
+            maxRunners: 20
+
+            # NOTE: There is an issue when installing the chart using `helm template`
+            # instead of `helm install` (which is what argocd uses) where the 
+            # installation process is unable to automatically find the deployment
+            # of the controller using the label `app.kubernetes.io/part-of: gha-rs-controller`. 
+            # Since ArgoCD uses `helm template` we faced this issue the first time installing it.
+            # As per this comment: https://github.com/actions/actions-runner-controller/issues/3043#issuecomment-1879439761
+            # the following config of manually specifying the service account fixes it
+            controllerServiceAccount:
+              namespace: dagger-runners
+              name: arc-controller-gha-rs-controller
+
+            # minRunners is the min number of idle runners. The target number of runners created will be
+            # calculated as a sum of minRunners and the number of jobs assigned to the scale set.
+            minRunners: 0
+
+            # This is what developers will use when requesting a job via `runs-on`
+            runnerScaleSetName: "dagger-{{name_slug}}-{{resource_id}}"
+
+            template:
+              spec:
+                tolerations:
+                  - effect: NoSchedule
+                    key: dagger-runners
+                    operator: Exists
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                      - matchExpressions:
+                        - key: node-for
+                          operator: In
+                          values:
+                            - dagger-runners-{{name_slug}}
+                initContainers:
+                - name: dagger-cli
+                  # https://hub.docker.com/_/alpine/tags
+                  image: alpine:3.19@sha256:6457d53fb065d6f250e1504b9bc42d5b6c65941d57532c072d929dd0628977d0
+                  command:
+                    - sh
+                    - -exc
+                    - |-
+                      # sleep infinity
+                      apk add curl
+                      if [ ! -f $BIN_DIR/dagger ]
+                      then
+                        # remove the "v" prefix from the dagger version
+                        DAGGER_VERSION="$(echo $DAGGER_VERSION | cut -c 2-)"
+                        if ! curl --fail --silent --show-error https://dl.dagger.io/dagger/install.sh | sh; then
+                          echo "dagger installation script exited with non-0 exit code"
+                        fi
+                        $BIN_DIR/dagger version
+                      fi
+                  env:
+                    - name: BIN_DIR
+                      value: /opt/dagger/bin
+                    - name: DAGGER_VERSION
+                      value: "{{name}}"
+                  volumeMounts:
+                    - name: dagger-cli
+                      mountPath: /opt/dagger/bin
+                containers:
+                - name: runner
+                  image: ghcr.io/actions/actions-runner:latest
+                  command:
+                    - bash
+                    - -exc
+                    - |-
+                      sudo cp /opt/dagger/bin/dagger /bin/dagger
+                      sudo apt-get update
+                      # NOTE: here you can install whichever tools are commonly
+                      # used in your pipelines and save the trouble of having
+                      # to reinstall them on each job.
+                      sudo apt-get install -y --no-install-recommends git-core curl wget unzip jq zip tar coreutils
+                      sudo rm -rf /var/lib/apt/lists/*
+                      exec /home/runner/run.sh
+                  resources:
+                    requests:
+                       cpu: "{{cpu_requests}}"
+                       memory: "{{memory_requests}}"
+                  env:
+                    - name: _EXPERIMENTAL_DAGGER_RUNNER_HOST
+                      value: unix:///var/run/buildkit/buildkitd.sock
+                  volumeMounts:
+                    - name: work
+                      mountPath: /home/runner/_work
+                    - name: varrundagger
+                      mountPath: /var/run/buildkit
+                    - name: dagger-cli
+                      mountPath: /opt/dagger/bin
+                volumes:
+                - name: work
+                  emptyDir: {}
+                - name: varrundagger
+                  hostPath:
+                    path: /var/run/dagger
+                - name: dagger-cli
+                  hostPath:
+                    path: /var/run/dagger-cli
+      project: dagger-runners
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+        automated:
+          prune: true
+          selfHeal: true
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "dagger-runners"

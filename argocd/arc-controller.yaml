@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arc-controller
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: arc
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
+  sources:
+    - repoURL: 'ghcr.io/actions/actions-runner-controller-charts'
+      chart: 'gha-runner-scale-set-controller'
+      targetRevision: '0.8.3'
+      helm:
+        valueFiles:
+        - $values/argocd/arc-controller/values.yaml
+    - repoURL: https://github.com/matipan/dynamic-dagger-engines
+      targetRevision: main
+      ref: values
+  destination:
+    namespace: dagger-runners
+    server: https://kubernetes.default.svc
