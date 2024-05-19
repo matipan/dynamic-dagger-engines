@@ -16,8 +16,6 @@ spec:
                 min_release: v0.11.1
             requeueAfterSeconds: 120
         - list:
-            # starting point is 1 core and 2Gi. We increase resources
-            # on cores by 4x. 4c is 8Gi, 8 core is 32Gi and 16 core is 128Gi.
             elements:
             - resource_id: "1c-2Gi"
               cpu_requests: "1"
