@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       name: "dagger-runners-{{name_slug}}"
-    spec:
+    SPEC:
       source:
         repoURL: 'ghcr.io/actions/actions-runner-controller-charts'
         chart: 'gha-runner-scale-set'
@@ -76,6 +76,8 @@ spec:
                   image: alpine:3.19@sha256:6457d53fb065d6f250e1504b9bc42d5b6c65941d57532c072d929dd0628977d0
                   command:
                     - sh
+                    - -o
+                    - pipefail
                     - -exc
                     - |-
                       # sleep infinity
@@ -85,7 +87,8 @@ spec:
                         # remove the "v" prefix from the dagger version
                         DAGGER_VERSION="$(echo $DAGGER_VERSION | cut -c 2-)"
                         if ! curl --fail --silent --show-error https://dl.dagger.io/dagger/install.sh | sh; then
-                          echo "dagger installation script exited with non-0 exit code"
+                          echo "Dagger CLI install failed"
+                          exit 1
                         fi
                         $BIN_DIR/dagger version
                       fi
