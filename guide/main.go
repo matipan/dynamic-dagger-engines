@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/rand"
+	"time"
 )
 
 const (
@@ -103,7 +104,8 @@ func (m *Guide) Teardown(ctx context.Context,
 			}).
 			File("/cluster.yaml")
 	}
-	return m.eksctl(cluster).Delete(ctx)
+	eksctl := m.eksctl(cluster)
+	return eksctl.WithContainer(eksctl.Container().WithEnvVariable("CACHE_BUST", time.Now().String())).Delete(ctx)
 }
 
 // CreateCluster creates a minimal EKS cluster using eksctl. There is an optional
