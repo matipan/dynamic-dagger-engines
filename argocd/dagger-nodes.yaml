@@ -20,7 +20,7 @@ spec:
       source:
         repoURL: https://github.com/matipan/dynamic-dagger-engines
         targetRevision: main
-        path: argocd/dagger-runners/manifests
+        path: argocd/nodes/
         kustomize:
           nameSuffix: -{{name_slug}}
           namespace: dagger-runners

@@ -25,8 +25,6 @@ spec:
           valuesObject:
             fullnameOverride: "dagger-engines-{{name_slug}}"
             engine:
-              ### Customize your Dagger Engine
-              # https://github.com/moby/buildkit/blob/5997099827e676c4b6ce5774c98ade2483e0afe7/cmd/buildkitd/config/config.go
               config: |
                 debug = true
                 insecure-entitlements = ["security.insecure"]
@@ -34,7 +32,6 @@ spec:
                 repository: registry.dagger.io/engine
                 tag: "{{name}}"
                 pullPolicy: IfNotPresent
-              ### Set taints & tolerations for this workload
               tolerations:
                 - effect: NoSchedule
                   key: "dagger-runners"

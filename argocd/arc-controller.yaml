@@ -6,21 +6,50 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: arc
+  project: dagger-runners
   syncPolicy:
     automated: {}
     syncOptions:
-      - CreateNamespace=true
-  sources:
-    - repoURL: 'ghcr.io/actions/actions-runner-controller-charts'
-      chart: 'gha-runner-scale-set-controller'
-      targetRevision: '0.8.3'
-      helm:
-        valueFiles:
-        - $values/argocd/arc-controller/values.yaml
-    - repoURL: https://github.com/matipan/dynamic-dagger-engines
-      targetRevision: main
-      ref: values
+    - Replace=true
+    - CreateNamespace=true
+  source:
+    repoURL: 'ghcr.io/actions/actions-runner-controller-charts'
+    chart: 'gha-runner-scale-set-controller'
+    targetRevision: '0.8.3'
+    helm:
+      valuesObject:
+        labels:
+          app: arc
+        replicaCount: 1
+        image:
+          repository: "ghcr.io/actions/gha-runner-scale-set-controller"
+          pullPolicy: IfNotPresent
+        imagePullSecrets: []
+        nameOverride: ""
+        fullnameOverride: ""
+        env:
+        serviceAccount:
+          create: true
+          annotations: {}
+          name: ""
+        podAnnotations: {}
+        podLabels: {}
+        podSecurityContext: {}
+        securityContext: {}
+        resources: {}
+        nodeSelector: {}
+        tolerations: []
+        affinity: {}
+        volumes: []
+        volumeMounts: []
+        metrics:
+          controllerManagerAddr: ":9090"
+          listenerAddr: ":9090"
+          listenerEndpoint: "/metrics"
+        flags:
+          logLevel: "info"
+          logFormat: "json"
+          updateStrategy: "immediate"
   destination:
     namespace: dagger-runners
     server: https://kubernetes.default.svc

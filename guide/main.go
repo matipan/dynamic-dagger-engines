@@ -67,24 +67,27 @@ func New(
 	}
 }
 
+// Up provisions an EKS cluster either using a specified config or the default
+// one. If using the default, the cluster that gets created is a 2 node cluster
+// of t3.medium instances in us-east-2 with Karpenter already installed.
 func (m *Guide) Up(ctx context.Context,
 	// +optional
 	cluster *File,
-) (string, error) {
+) (*File, error) {
 	kubeconfig, err := m.CreateCluster(ctx, cluster)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if _, err := m.InstallArgo(ctx, kubeconfig); err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if _, err := m.InstallArgoGenerator(ctx, kubeconfig); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return "ready to go! 🚀", nil
+	return kubeconfig, nil
 }
 
 // Teardown can be used after the guide is complete to remove the cluster and
@@ -107,8 +110,6 @@ func (m *Guide) Teardown(ctx context.Context,
 // `cluster.yaml` file you can specify to eksctl. If not the default cluster
 // that gets created has a single managed node group with a maximum of two t3a.medium
 // nodes. It returns the kubeconfig of the newly created cluster.
-// TODO: clarify what infrastructure this creates and how much money it will cost
-// per month.
 func (m *Guide) CreateCluster(ctx context.Context,
 	// +optional
 	cluster *File,
@@ -154,7 +155,7 @@ func (m *Guide) InstallArgoGenerator(ctx context.Context, kubeconfig *File) (str
 
 	return m.kubectl(kubeconfig).Container().
 		WithEnvVariable("ARGOCD_TOKEN", string(dst)).
-		WithExec([]string{"sh", "-c", "envsubst < https://raw.githubusercontent.com/matipan/argocd-github-release-generator/v0.0.3/k8s/install.yaml | k apply -f -"}).
+		WithExec([]string{"sh", "-c", "curl -s https://raw.githubusercontent.com/matipan/argocd-github-release-generator/v0.0.3/k8s/install.yaml | envsubst | kubectl apply -f -"}).
 		Stdout(ctx)
 }
 

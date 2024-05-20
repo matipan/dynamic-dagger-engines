@@ -16,7 +16,7 @@ spec:
   template:
     metadata:
       name: "dagger-runners-{{name_slug}}"
-    SPEC:
+    spec:
       source:
         repoURL: 'ghcr.io/actions/actions-runner-controller-charts'
         chart: 'gha-runner-scale-set'
@@ -25,12 +25,12 @@ spec:
           valuesObject:
             # githubConfigUrl is the GitHub url for where you want to configure runners
             # TODO: change this to point to your repository
-            githubConfigUrl: "https://github.com/<YOUR GITHUB REPOSITORY>"
+            githubConfigUrl: "https://github.com/matipan/dynamic-dagger-engines"
 
             # githubConfigSecret is the k8s secrets to use when auth with GitHub API.
             # TODO: configure your github credentials on a secret and reference it
             # here
-            githubConfigSecret: <YOUR SECRET>
+            githubConfigSecret: dagger-runners-github-secret
 
             # maxRunners is the max number of runners the autoscaling runner set will scale up to.
             maxRunners: 20
