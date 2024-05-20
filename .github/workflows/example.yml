@@ -1,0 +1,17 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Example
+
+jobs:
+  # Run linters for API.
+  example:
+    runs-on: dagger-v0-11-4
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Example command"
+        run: |
+          dagger call -m github.com/shykes/daggerverse/hello hello --giant --name internet

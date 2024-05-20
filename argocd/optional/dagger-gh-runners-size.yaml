@@ -17,21 +17,21 @@ spec:
             requeueAfterSeconds: 120
         - list:
             elements:
-            - resource_id: "1c-2Gi"
+            - resource_id: "1c-2g"
               cpu_requests: "1"
               memory_requests: "2Gi"
-            - resource_id: "2c-4Gi"
+            - resource_id: "2c-4g"
               cpu_requests: "2"
               memory_requests: "4Gi"
-            - resource_id: "4c-8Gi"
+            - resource_id: "4c-8g"
               cpu_requests: "4"
               memory_requests: "8Gi"
-            - resource_id: "8c-16Gi"
+            - resource_id: "8c-16g"
               cpu_requests: "8"
               memory_requests: "16Gi"
-            - resource_id: "16c-32Gi"
+            - resource_id: "16c-32g"
               cpu_requests: "16"
-              memory_requests: "32Gi"
+              memory_requests: "32g"
   template:
     metadata:
       name: "dagger-runners-{{name_slug}}-{{resource_id}}"
@@ -44,12 +44,12 @@ spec:
           valuesObject:
             # githubConfigUrl is the GitHub url for where you want to configure runners
             # TODO: change this to point to your repository
-            githubConfigUrl: "https://github.com/<YOUR GITHUB REPOSITORY>"
+            githubConfigUrl: "https://github.com/matipan/dynamic-dagger-engines"
 
             # githubConfigSecret is the k8s secrets to use when auth with GitHub API.
             # TODO: configure your github credentials on a secret and reference it
             # here
-            githubConfigSecret: <YOUR SECRET>
+            githubConfigSecret: dagger-runners-github-secret
 
             # maxRunners is the max number of runners the autoscaling runner set will scale up to.
             maxRunners: 20
