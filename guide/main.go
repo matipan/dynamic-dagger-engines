@@ -155,7 +155,7 @@ func (m *Guide) InstallArgoGenerator(ctx context.Context, kubeconfig *File) (str
 
 	return m.kubectl(kubeconfig).Container().
 		WithEnvVariable("ARGOCD_TOKEN", string(dst)).
-		WithExec([]string{"sh", "-c", "curl -s https://raw.githubusercontent.com/matipan/argocd-github-release-generator/v0.0.3/k8s/install.yaml | envsubst | kubectl apply -f -"}).
+		WithExec([]string{"sh", "-c", "curl -s https://raw.githubusercontent.com/matipan/argocd-github-release-generator/v0.0.4/k8s/install.yaml | envsubst | kubectl apply -f -"}).
 		Stdout(ctx)
 }
 
