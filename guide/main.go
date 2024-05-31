@@ -135,7 +135,7 @@ func (m *Guide) CreateCluster(ctx context.Context,
 }
 
 // Installs ArgoCD on the provided EKS cluster.
-func (m *Guide) InstallArgo(ctx context.Context, kubeconfig *File) (string, error) {
+func (m *Guide) InstallArgo(ctx context.Context, kubeconfig *Secret) (string, error) {
 	kubectl := m.kubectl(kubeconfig)
 	if _, err := kubectl.Exec(ctx, []string{"create", "namespace", "argocd"}); err != nil {
 		return "", fmt.Errorf("failed to create argocd namespace: %s", err)
@@ -151,7 +151,7 @@ func (m *Guide) InstallArgo(ctx context.Context, kubeconfig *File) (string, erro
 
 // InstallArgoGenerator installs the argocd-github-release-generator on the
 // kubernetes cluster.
-func (m *Guide) InstallArgoGenerator(ctx context.Context, kubeconfig *File) (string, error) {
+func (m *Guide) InstallArgoGenerator(ctx context.Context, kubeconfig *Secret) (string, error) {
 	dst := []byte{}
 	base64.RawStdEncoding.Encode(dst, randStr(10))
 
@@ -165,7 +165,7 @@ func (m *Guide) eksctl(cluster *File) *Eksctl {
 	return dag.Eksctl(m.AwsCreds, m.AwsProfile, cluster, EksctlOpts{Version: EksctlVersion})
 }
 
-func (m *Guide) kubectl(kubeconfig *File) *KubectlCli {
+func (m *Guide) kubectl(kubeconfig *Secret) *KubectlCli {
 	opts := KubectlKubectlEksOpts{}
 	if m.AwsConfig != nil {
 		opts.AwsConfig = m.AwsConfig

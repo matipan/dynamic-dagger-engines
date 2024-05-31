@@ -3,12 +3,12 @@
   "sdk": "go",
   "dependencies": [
     {
-      "name": "kubectl",
-      "source": "github.com/matipan/daggerverse/kubectl@f126a3392b2a6f7c38d88e12de6e878a071bb484"
-    },
-    {
       "name": "eksctl",
       "source": "github.com/matipan/daggerverse/eksctl@a9fb395721ec7f6095ec9ed1ca1ae54fe8da7b37"
+    },
+    {
+      "name": "kubectl",
+      "source": "github.com/matipan/daggerverse/kubectl@f126a3392b2a6f7c38d88e12de6e878a071bb484"
     }
   ],
   "source": ".",
