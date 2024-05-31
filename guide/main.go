@@ -51,15 +51,15 @@ addons:
 )
 
 type Guide struct {
-	AwsConfig  *File
-	AwsCreds   *File
+	AwsConfig  *Secret
+	AwsCreds   *Secret
 	AwsProfile string
 }
 
 func New(
 	// +optional
-	awsConfig *File,
-	awsCreds *File,
+	awsConfig *Secret,
+	awsCreds *Secret,
 	awsProfile string,
 ) *Guide {
 	return &Guide{
